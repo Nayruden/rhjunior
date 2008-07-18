@@ -1,37 +1,77 @@
 <?php
-error_reporting(E_ALL);
-$grab_url = "http://www.rhjunior.com/QQSR/Images/";
-$num = 1;
+error_reporting( E_ALL ); // Since this is just a utility script.
 
-// create a cURL handle
-$ch = curl_init();
+function failure( $msg='' )
+{
+	echo "<h1>Failure</h1><br />\n";
+	if ( !empty( $msg ) )
+		echo $msg;
+}
 
-while ( true ) { // Break inside
-	// set URL and other options
-	curl_setopt( $ch, CURLOPT_BINARYTRANSFER, TRUE ); // We're grabbing images
-	curl_setopt( $ch, CURLOPT_FILETIME, TRUE ); // We want the modify date
-
-	curl_setopt( $ch, CURLOPT_URL, $grab_url . sprintf( "%05d.png", $num ) );
-	curl_setopt( $ch, CURLOPT_HEADER, FALSE );
-
-	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE );
-
-	// grab URL and pass it to the browser
-	$ret = curl_exec( $ch );
-
-	$info = curl_getinfo( $ch );
-	printf( "Img: %s %s", sprintf( "imgs/%05d.png", $num ), $info[ 'http_code' ] );
-	if ( $info[ 'http_code' ] != '200' )
-		break;
-		
-	$fh = fopen( sprintf( "imgs/%05d.png", $num ), "w" );
-	fwrite( $fh, $ret );
-	fclose( $fh );
-	touch( sprintf( "imgs/%05d.png", $num ), intval( $info[ 'filetime' ] ) );
+/*
+	Function: grabComics
 	
-	$num++;
-}	
+	Grabs comics in a given directory starting with 00001.png and working on up.
+	
+	Parameters:
+	
+		grab_uri - The URI 'directory' to grab from.
+		output_uri - The directory to copy to.
+*/
+function grabComics( $grab_uri, $output_uri )
+{
+	$num = 1;
 
-// close cURL resource, and free up system resources
-curl_close( $ch );
+	// create a cURL handle
+	$ch = curl_init();
+
+	while ( true ) { // Break inside
+		$filename = sprintf( "./%05d.png", $num );
+		// set URL and other options
+		curl_setopt( $ch, CURLOPT_BINARYTRANSFER, TRUE ); // We're grabbing images
+		curl_setopt( $ch, CURLOPT_FILETIME, TRUE ); // We want the modify date
+		curl_setopt( $ch, CURLOPT_URL, $grab_uri . $filename ); // The URL of course
+		curl_setopt( $ch, CURLOPT_HEADER, FALSE ); // We don't want headers with the output
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE ); // Don't output retrn
+
+		$ret = curl_exec( $ch );
+
+		$info = curl_getinfo( $ch );
+		if ( $info[ 'http_code' ] != 200 ) {
+			if ( $info[ 'http_code' ] == 404 ) {
+				echo "<h1>Success</h1><br />\nFetched ${num} comics for ${grab_uri}.<br />\n";
+			} 
+			else {
+				failure( "Received http code " . $info[ 'http_code' ] . " for ${grab_uri}.<br />\n" );
+			}
+			break;
+		}
+		
+		$fh = fopen( $output_uri . $filename, "w" );
+		if ( $fh === FALSE ) {
+			failure( "Unable to open output file ${output_uri}${filename}.<br />\n" );
+			break;
+		}
+		
+		$bytes = fwrite( $fh, $ret );
+		fclose( $fh );
+		
+		if ( $bytes == FALSE ) {
+			failure( "Error writing file ${output_uri}${filename}.<br />\n" );
+			break;
+		}
+	
+		$success = touch( $output_uri . $filename, intval( $info[ 'filetime' ] ) ); // Set modified date
+		if ( $success === FALSE ) {
+			echo "WARNING: Failed to touch file ${output_uri}${filename}.<br />\n";
+		}
+	
+		$num++;
+	}	
+
+	// close cURL resource, and free up system resources
+	curl_close( $ch );
+}
+
+grabComics( "http://www.rhjunior.com/QQSR/Images/", "./imgs/" );
 ?>
