@@ -8,4 +8,6 @@ $knownRHJComics = array(
 	'QQSR' => 'http://www.rhjunior.com/QQSR/Images/',
 	'TOTQ' => 'http://www.rhjunior.com/totq/Images/',
 );
+
+$max_skip = 2; // Max comic skip
 ?>

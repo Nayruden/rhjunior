@@ -1,5 +1,6 @@
 <?php
 error_reporting( E_ALL ); // Since this is just a utility script.
+require_once( './defines.php' );
 
 function failure( $msg='' )
 {
@@ -24,22 +25,32 @@ function grabComics( $grab_uri, $output_uri )
 
 	// create a cURL handle
 	$ch = curl_init();
+	curl_setopt( $ch, CURLOPT_BINARYTRANSFER, TRUE ); // We're grabbing images
+	curl_setopt( $ch, CURLOPT_FILETIME, TRUE ); // We want the modify date
+	curl_setopt( $ch, CURLOPT_HEADER, FALSE ); // We don't want headers with the output
+	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE ); // Don't output return
 
+	$curskip = 0;
 	while ( true ) { // Break inside
 		$filename = sprintf( "./%05d.png", $num );
-		// set URL and other options
-		curl_setopt( $ch, CURLOPT_BINARYTRANSFER, TRUE ); // We're grabbing images
-		curl_setopt( $ch, CURLOPT_FILETIME, TRUE ); // We want the modify date
 		curl_setopt( $ch, CURLOPT_URL, $grab_uri . $filename ); // The URL of course
-		curl_setopt( $ch, CURLOPT_HEADER, FALSE ); // We don't want headers with the output
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE ); // Don't output retrn
-
 		$ret = curl_exec( $ch );
-
 		$info = curl_getinfo( $ch );
+		
 		if ( $info[ 'http_code' ] != 200 ) {
 			if ( $info[ 'http_code' ] == 404 ) {
-				echo "<h1>Success</h1><br />\nFetched ${num} comics for ${grab_uri}.<br />\n";
+				// First try .gif 
+				$filename = sprintf( "./%05d.gif", $num );
+				curl_setopt( $ch, CURLOPT_URL, $comic . $filename ); // The URL of course
+				$ret = curl_exec( $ch );
+				$info = curl_getinfo( $ch );
+
+				if ( $info[ 'http_code' ] == 404 && $curSkip <= $max_skip ) {
+					$curSkip++;
+					continue; // Goto next
+				} else { // Else we've hit the end
+					echo "<h1>Success</h1><br />\nFetched ${num} comics for ${grab_uri}.<br />\n";
+				}
 			} 
 			else {
 				failure( "Received http code " . $info[ 'http_code' ] . " for ${grab_uri}.<br />\n" );

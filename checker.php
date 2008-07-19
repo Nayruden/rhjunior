@@ -2,7 +2,6 @@
 require_once( './defines.php' );
 error_reporting( E_ALL );
 $config_file = "comicstats.txt";
-$max_skip = 2;
 
 if ( !file_exists( $config_file ) ) {
 	$fh = fopen( $config_file, 'w' ) or die ('Unable to create config file!');
@@ -23,6 +22,9 @@ foreach ( $lines as $line ) {
 print_r( $data );
 
 $ch = curl_init();
+curl_setopt( $ch, CURLOPT_NOBODY, TRUE ); // We just want the server response
+curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE ); // Don't output retrn
+
 foreach ( $knownRHJComics as $key => $comic ) {
 	$num = 0;
 	$curSkip = 0;
@@ -32,11 +34,7 @@ foreach ( $knownRHJComics as $key => $comic ) {
 	do {
 		$num++;
 		$filename = sprintf( "./%05d.png", $num );
-		// set URL and other options
-		curl_setopt( $ch, CURLOPT_NOBODY, TRUE );
 		curl_setopt( $ch, CURLOPT_URL, $comic . $filename ); // The URL of course
-		curl_setopt( $ch, CURLOPT_HEADER, TRUE ); // We want the headers
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE ); // Don't output retrn
 
 		$ret = curl_exec( $ch );
 		$info = curl_getinfo( $ch );
@@ -44,10 +42,7 @@ foreach ( $knownRHJComics as $key => $comic ) {
 		// Try .gif
 		if ( $info[ 'http_code' ] == 404 ) {
 			$filename = sprintf( "./%05d.gif", $num );
-			curl_setopt( $ch, CURLOPT_NOBODY, TRUE );
 			curl_setopt( $ch, CURLOPT_URL, $comic . $filename ); // The URL of course
-			curl_setopt( $ch, CURLOPT_HEADER, TRUE ); // We want the headers
-			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE ); // Don't output retrn
 			$ret = curl_exec( $ch );
 			$info = curl_getinfo( $ch );
 			
@@ -68,6 +63,5 @@ foreach ( $data as $key => $num ) {
 }
 fclose( $fh );
 
-echo "\n\n<br /><br />";
 print_r( $data );
 ?>
