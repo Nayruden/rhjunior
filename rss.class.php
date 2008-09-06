@@ -32,8 +32,9 @@ class RSSFeed {
 		$this->channel_items = array();
 	}
 	
-	function addItem( $title, $link, $description ) {
-		$this->channel_items[] = array( 'title'=>$title, 'link'=>$link, 'description'=>$description );
+	function addItem( $title, $link, $description, $author=NULL, $comments=NULL, $guid=NULL, $pubDate=NULL ) {
+		$this->channel_items[] = array( 'title'=>$title, 'link'=>$link, 'description'=>$description, 'author'=>$author, 'comments'=>$comments,
+			'guid'=>$guid, 'pubDate'=>$pubDate );
 	}
 	
 	function buildRSS( $tab="\t", $nl="\n" ) {
@@ -51,6 +52,14 @@ class RSSFeed {
 			$output .= str_repeat( $tab, 3 ) . '<title>' . $data[ 'title' ] . '</title>' . $nl;
 			$output .= str_repeat( $tab, 3 ) . '<link>' . $data[ 'link' ] . '</link>' . $nl;
 			$output .= str_repeat( $tab, 3 ) . '<description>' . $data[ 'description' ] . '</description>' . $nl;
+			if ( !empty( $data[ 'author' ] )
+				$output .= str_repeat( $tab, 3 ) . '<author>' . $data[ 'author' ] . '</author>' . $nl;
+			if ( !empty( $data[ 'comments' ] )
+				$output .= str_repeat( $tab, 3 ) . '<comments>' . $data[ 'comments' ] . '</comments>' . $nl;
+			if ( !empty( $data[ 'guid' ] )
+				$output .= str_repeat( $tab, 3 ) . '<guid>' . $data[ 'guid' ] . '</guid>' . $nl;
+			if ( !empty( $data[ 'pubDate' ] )
+				$output .= str_repeat( $tab, 3 ) . '<pubDate>' . $data[ 'pubDate' ] . '</pubDate>' . $nl;
 			$output .= str_repeat( $tab, 2 ) . '</item>' . $nl;
 		}
 		
